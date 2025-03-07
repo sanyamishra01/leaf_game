@@ -1,0 +1,6 @@
+matplotlib
+numpy
+streamlit
+scipy
+pyaudio
+struct
