@@ -74,16 +74,19 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from scipy.signal import stft
 import sounddevice as sd
-import struct
 import queue
 import time
+import matplotlib
+
+# Set up Matplotlib backend for deployment
+matplotlib.use('Agg')  # Non-interactive backend for cloud environments
 
 # Parameters for live audio capture
 CHUNK = 1024
 RATE = 44100
-HUMMING_LOW_FREQ = 20000  # Lower bound for human humming
-HUMMING_HIGH_FREQ = 30000  # Upper bound for human humming
-NOISE_THRESHOLD = 50  # Ignore signals below this magnitude
+HUMMING_LOW_FREQ = 80  # Lower bound for human humming
+HUMMING_HIGH_FREQ = 300  # Upper bound for human humming
+NOISE_THRESHOLD = 50  # Minimum signal magnitude to consider
 
 # Queue for audio data
 audio_queue = queue.Queue()
@@ -142,14 +145,8 @@ if st.button("Start Listening"):
                 if not audio_queue.empty():
                     audio_data = audio_queue.get()
 
-                    # Debug: Print raw audio data
-                    print("Raw audio data:", audio_data[:10])
-
                     # Calculate AP score
                     score = calculate_patency_score(audio_data)
-
-                    # Debug: Print calculated AP score
-                    print(f"Calculated AP Score: {score}")
 
                     # Update leaf color and graph title
                     leaf.set_facecolor(get_color(score))
