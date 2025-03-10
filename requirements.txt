@@ -2,4 +2,4 @@ matplotlib
 numpy
 streamlit
 scipy
-pyaudio
+sounddevice

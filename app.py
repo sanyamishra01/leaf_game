@@ -1,74 +1,30 @@
-import streamlit as st
+import sounddevice as sd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
-import pyaudio
-import struct
-from scipy.signal import stft
+import streamlit as st
 
 # Parameters for live audio capture
-CHUNK = 2048
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
+RATE = 44100  # Sampling rate in Hz
+CHUNK = 1024  # Number of audio frames per buffer
 
-# Frequency range for humming (in Hz)
-HUMMING_LOW_FREQ = 20000
-HUMMING_HIGH_FREQ = 30000
+# Streamlit App Title
+st.title("Live Audio Analyzer")
+st.write("Humming into the microphone will process audio data in real-time!")
 
-# Function to map the airway patency score to a color
-def get_color(score):
-    if 0 <= score <= 0.3:
-        return 'red'
-    elif 0.3 < score <= 0.6:
-        return 'green'
-    else:
-        return 'blue'
+# Function to process audio data in real-time
+def audio_callback(indata, frames, time, status):
+    if status:
+        print(f"Status: {status}")  # Report any errors in the stream
+    # Process audio data here
+    audio_data = indata[:, 0]  # Use the first channel of audio input
+    normalized_data = np.linalg.norm(audio_data)  # Normalize the data
+    # Example: Print normalized data to console
+    print(f"Normalized Data: {normalized_data:.3f}")
 
-# Function to calculate the airway patency score using STFT
-def calculate_patency_score(audio_data):
-    f, t, Zxx = stft(audio_data, fs=RATE, window='hamming', nperseg=CHUNK,
-                     noverlap=CHUNK // 2, nfft=2 * CHUNK, boundary='zeros', padded=True)
-    freq_indices = np.where((f >= HUMMING_LOW_FREQ) & (f <= HUMMING_HIGH_FREQ))[0]
-    filtered_Zxx = np.abs(Zxx[freq_indices, :])
-    if filtered_Zxx.size == 0:
-        return 0
-    stft_intensity = 20 * np.log10(np.abs(filtered_Zxx) + 1e-6)
-    avg_intensity = np.mean(stft_intensity)
-    score = min(max(avg_intensity / 100, 0), 1)
-    return score
-
-# Streamlit app layout
-st.title("Live Airway Patency Score")
-st.write("Humming into the microphone changes the leaf color based on your airway patency score.")
-
-# Add a button to start the project
+# Start the audio stream and process in real-time using Streamlit button
 if st.button("Start Listening"):
-    st.write("Listening... Please hum!")
-    audio = pyaudio.PyAudio()
-    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                        input=True, frames_per_buffer=CHUNK)
-    
-    # Live visualization
-    fig, ax = plt.subplots()
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    leaf = patches.Ellipse((5, 5), 8, 10, fc='green', ec='black')
-    ax.add_patch(leaf)
-    plt.title("Live Patency Visualizer")
-
     try:
-        while True:
-            raw_data = stream.read(CHUNK, exception_on_overflow=False)
-            audio_data = np.array(struct.unpack(str(CHUNK) + 'h', raw_data), dtype=np.int16)
-            score = calculate_patency_score(audio_data)
-            leaf.set_facecolor(get_color(score))
-            ax.set_title(f'Patency Score: {score:.2f}', fontsize=14)
-            st.pyplot(fig)
+        st.write("Listening... Press Stop to end the session.")
+        with sd.InputStream(callback=audio_callback, channels=1, samplerate=RATE, blocksize=CHUNK):
+            sd.sleep(10000)  # Keep the stream open for 10 seconds
     except Exception as e:
-        st.error(f"Error: {e}")
-    finally:
-        stream.stop_stream()
-        stream.close()
-        audio.terminate()
+        st.error(f"An error occurred: {e}")
