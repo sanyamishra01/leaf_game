@@ -15,16 +15,22 @@ def audio_callback(indata, frames, time, status):
     if status:
         print(f"Status: {status}")  # Report any errors in the stream
     # Process audio data here
-    audio_data = indata[:, 0]  # Use the first channel of audio input
-    normalized_data = np.linalg.norm(audio_data)  # Normalize the data
-    # Example: Print normalized data to console
-    print(f"Normalized Data: {normalized_data:.3f}")
+    try:
+        audio_data = indata[:, 0]  # Use the first channel of audio input
+        normalized_data = np.linalg.norm(audio_data)  # Normalize the data
+        # Example: Log normalized data to console
+        print(f"Normalized Data: {normalized_data:.3f}")
+    except Exception as e:
+        print(f"Error processing audio data: {e}")
 
-# Start the audio stream and process in real-time using Streamlit button
+# Streamlit interface for starting/stopping audio
 if st.button("Start Listening"):
     try:
-        st.write("Listening... Press Stop to end the session.")
+        st.write("Listening... This will run for 10 seconds.")
         with sd.InputStream(callback=audio_callback, channels=1, samplerate=RATE, blocksize=CHUNK):
             sd.sleep(10000)  # Keep the stream open for 10 seconds
+        st.success("Listening session complete!")
+    except OSError as e:
+        st.error(f"Audio input error: {e}")
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"An unexpected error occurred: {e}")
