@@ -1,5 +1,72 @@
-import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend
+# import streamlit as st
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as patches
+# from scipy.signal import stft
+# import sounddevice as sd
+# import queue
+
+# # Parameters
+# CHUNK = 2048
+# RATE = 44100
+# HUMMING_LOW_FREQ = 100
+# HUMMING_HIGH_FREQ = 300
+
+# audio_queue = queue.Queue()
+
+# def get_color(score):
+#     if score < 0.3:
+#         return '#b8e994'  # Light Green
+#     elif 0.3 <= score <= 0.6:
+#         return '#55efc4'  # Normal Green
+#     else:
+#         return '#00b894'  # Dark Green
+
+# def calculate_patency_score(audio_data):
+#     f, t, Zxx = stft(audio_data, fs=RATE, window='hamming', nperseg=CHUNK,
+#                      noverlap=CHUNK // 2, nfft=2 * CHUNK, boundary='zeros', padded=True)
+#     freq_indices = np.where((f >= HUMMING_LOW_FREQ) & (f <= HUMMING_HIGH_FREQ))[0]
+#     filtered_Zxx = np.abs(Zxx[freq_indices, :])
+#     if filtered_Zxx.size == 0:
+#         return 0
+#     stft_intensity = 20 * np.log10(np.abs(filtered_Zxx) + 1e-6)
+#     avg_intensity = np.mean(stft_intensity)
+#     score = min(max(avg_intensity / 100, 0), 1)
+#     return score
+
+# def audio_callback(indata, frames, time, status):
+#     if status:
+#         print(f"Status: {status}")
+#     if indata is not None:
+#         print(f"Audio data captured: {indata.shape}")
+#         audio_queue.put(indata[:, 0])
+
+# # Streamlit App
+# st.title("Live Audio Analyzer")
+# st.write("Humming changes graph color dynamically.")
+
+# fig, ax = plt.subplots()
+# ax.set_xlim(0, 10)
+# ax.set_ylim(0, 10)
+# leaf = patches.Ellipse((5, 5), 8, 10, fc='green', ec='black')
+# ax.add_patch(leaf)
+# placeholder = st.empty()
+
+# if st.button("Start Listening"):
+#     st.write("Listening for 7 seconds... Please hum!")
+#     try:
+#         with sd.InputStream(callback=audio_callback, channels=1, samplerate=RATE, blocksize=CHUNK):
+#             sd.sleep(7000)  # Wait for 7 seconds
+#             while not audio_queue.empty():
+#                 audio_data = audio_queue.get()
+#                 score = calculate_patency_score(audio_data)
+#                 leaf.set_facecolor(get_color(score))
+#                 ax.set_title(f"Patency Score: {score:.2f}", fontsize=14)
+#                 fig.canvas.draw()
+#                 placeholder.pyplot(fig)
+#     except Exception as e:
+#         st.error(f"Error during audio capture: {e}")
+
 
 import streamlit as st
 import numpy as np
@@ -7,31 +74,21 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from scipy.signal import stft
 import sounddevice as sd
+import struct
 import queue
+import time
 
-
-print(sd.query_devices())  # List all available devices for debugging
-sd.default.device = (1, 1)  # Use appropriate device IDs for input and output
-
-devices = sd.query_devices()
-default_input = sd.default.device[0] if sd.default.device else None
-if default_input is None:
-    st.error("No audio input device detected! Please check your microphone.")
-
-
-
-
-
-# Parameters
-CHUNK = 2048
+# Parameters for live audio capture
+CHUNK = 1024
 RATE = 44100
-HUMMING_LOW_FREQ = 100
-HUMMING_HIGH_FREQ = 300
+HUMMING_LOW_FREQ = 20000  # Lower bound for human humming
+HUMMING_HIGH_FREQ = 30000  # Upper bound for human humming
+NOISE_THRESHOLD = 50  # Ignore signals below this magnitude
 
 # Queue for audio data
 audio_queue = queue.Queue()
 
-# Function to map AP score to colors (Light Green to Dark Green)
+# Shades of green for AP score mapping
 def get_color(score):
     if score < 0.3:
         return '#b8e994'  # Light Green
@@ -40,7 +97,7 @@ def get_color(score):
     else:
         return '#00b894'  # Dark Green
 
-# Function to calculate airway patency score using STFT
+# Function to calculate airway patency score from audio input
 def calculate_patency_score(audio_data):
     f, t, Zxx = stft(audio_data, fs=RATE, window='hamming', nperseg=CHUNK,
                      noverlap=CHUNK // 2, nfft=2 * CHUNK, boundary='zeros', padded=True)
@@ -53,88 +110,55 @@ def calculate_patency_score(audio_data):
     score = min(max(avg_intensity / 100, 0), 1)
     return score
 
-# Function to calculate health stock dynamically
-def calculate_health_stock(ap_ranges, amount_invested=100):
-    weighted_sum = (ap_ranges['>0.6'] * 4 + ap_ranges['0.5–0.6'] * 3 +
-                    ap_ranges['0.3–0.4'] * 2 + ap_ranges['<0.2'] * 1)
-    total_counts = sum(ap_ranges.values())
-    if total_counts == 0:
-        return 0
-    weighted_average = weighted_sum / total_counts
-    return amount_invested * weighted_average
-
-# Callback function for real-time audio capture
+# Callback function for audio input
 def audio_callback(indata, frames, time, status):
     if status:
         print(f"Status: {status}")
     audio_queue.put(indata[:, 0])  # Add audio data to the queue
 
-# Streamlit app layout
-st.title("Live Airway Patency Visualizer and Health Stock Analytics")
-st.write("Humming changes the leaf color and calculates your health stock dynamically.")
+# Streamlit App
+st.title("Live Audio Analyzer with Real-Time Visualization")
+st.write("Hum into your microphone for 7 seconds. The graph dynamically changes color based on the AP score.")
 
-# Initialize player analytics and health stock
-ap_ranges = {'<0.2': 0, '0.3–0.4': 0, '0.5–0.6': 0, '>0.6': 0}
-amount_invested = 100  # Set a default investment amount
+# Matplotlib setup for the oval leaf shape
+fig, ax = plt.subplots()
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 10)
+leaf = patches.Ellipse((5, 5), 8, 10, fc='green', ec='black')
+ax.add_patch(leaf)
+placeholder = st.empty()
 
-# Start button
 if st.button("Start Listening"):
-    st.write("Listening... Please hum!")
+    st.write("Listening for 7 seconds... Please hum!")
 
-    # Matplotlib figure setup
-    fig, ax = plt.subplots()
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    leaf = patches.Ellipse((5, 5), 8, 10, fc='green', ec='black')
-    ax.add_patch(leaf)
-    placeholder = st.empty()  # Placeholder for live plot
+    # Initialize start time
+    start_time = time.time()
+    duration = 7  # Duration in seconds
 
-    # Dashboard placeholders
-    analytics_placeholder = st.empty()
-    rankings_placeholder = st.empty()
-
-    # Simulate live data processing
+    # Start audio capture
     try:
         with sd.InputStream(callback=audio_callback, channels=1, samplerate=RATE, blocksize=CHUNK):
-            for _ in range(200):  # Adjust the loop for ~20 seconds
+            while time.time() - start_time < duration:  # Loop for 7 seconds
                 if not audio_queue.empty():
                     audio_data = audio_queue.get()
+
+                    # Debug: Print raw audio data
+                    print("Raw audio data:", audio_data[:10])
+
+                    # Calculate AP score
                     score = calculate_patency_score(audio_data)
 
-                    # Update color based on score
+                    # Debug: Print calculated AP score
+                    print(f"Calculated AP Score: {score}")
+
+                    # Update leaf color and graph title
                     leaf.set_facecolor(get_color(score))
                     ax.set_title(f'Patency Score: {score:.2f}', fontsize=14)
+
+                    # Render the updated graph
+                    fig.canvas.draw()
                     placeholder.pyplot(fig)
 
-                    # Update analytics
-                    if score < 0.2:
-                        ap_ranges['<0.2'] += 1
-                    elif 0.3 <= score <= 0.4:
-                        ap_ranges['0.3–0.4'] += 1
-                    elif 0.5 <= score <= 0.6:
-                        ap_ranges['0.5–0.6'] += 1
-                    elif score > 0.6:
-                        ap_ranges['>0.6'] += 1
-
-                    # Calculate health stock
-                    health_stock = calculate_health_stock(ap_ranges, amount_invested)
-
-                    # Update analytics and rankings
-                    analytics_placeholder.write(f"""
-                    **Live Analytics**
-                    - AP < 0.2: {ap_ranges['<0.2']}
-                    - AP 0.3–0.4: {ap_ranges['0.3–0.4']}
-                    - AP 0.5–0.6: {ap_ranges['0.5–0.6']}
-                    - AP > 0.6: {ap_ranges['>0.6']}
-                    - **Health Stock**: {health_stock:.2f}
-                    """)
-
-                    # Dummy rankings for demonstration
-                    rankings_placeholder.write(f"""
-                    **Player Rankings**
-                    1. Player A: 1200 Health Stock
-                    2. Player B: 1100 Health Stock
-                    3. You: {health_stock:.2f} Health Stock
-                    """)
+            st.write("Finished listening! Animation stopped.")
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"Error during audio capture: {e}")
