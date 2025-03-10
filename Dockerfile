@@ -1,11 +1,4 @@
-FROM python:3.11-slim
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libportaudio2 \
-    libasound2 \
-    portaudio19-dev \
-    && rm -rf /var/lib/apt/lists/*
+FROM jrottenberg/ffmpeg:4.4-slim
 
 # Set the working directory
 WORKDIR /app
