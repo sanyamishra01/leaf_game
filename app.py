@@ -9,6 +9,16 @@ from scipy.signal import stft
 import sounddevice as sd
 import queue
 
+
+print(sd.query_devices())  # List all available devices for debugging
+sd.default.device = (1, 1)  # Use appropriate device IDs for input and output
+
+devices = sd.query_devices()
+default_input = sd.default.device[0] if sd.default.device else None
+if default_input is None:
+    st.error("No audio input device detected! Please check your microphone.")
+
+
 # Parameters for live audio capture
 CHUNK = 2048
 RATE = 44100  # Sampling rate in Hz
