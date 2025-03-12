@@ -17,4 +17,5 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Command to run the app
-CMD ["sh", "-c", "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0"]
+# Command to start Streamlit
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
