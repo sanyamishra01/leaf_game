@@ -4,6 +4,12 @@ from scipy.signal import stft
 import wave
 import io
 from pydub import AudioSegment
+from pydub.utils import which
+
+# Manually set FFmpeg path
+AudioSegment.converter = which("ffmpeg")
+AudioSegment.ffprobe = which("ffprobe")
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import time
