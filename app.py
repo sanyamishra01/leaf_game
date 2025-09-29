@@ -90,66 +90,68 @@ if uploaded_file is not None:
         # Calculate AP scores over time
         ap_scores = calculate_ap(audio_data, rate)
 
-        # Determine animation duration and update interval
-        ANIMATION_DURATION = 3.0  # Total duration for animation (in seconds)
-        interval = ANIMATION_DURATION / len(ap_scores)  # Time interval per update
+        # Determine total animation duration (reduce as needed)
+ANIMATION_DURATION = 2.0  # total duration in seconds
+interval = ANIMATION_DURATION / max(len(ap_scores), 1)  # time per update
 
-        # Create a Matplotlib figure for the oval visualization
-        fig, ax = plt.subplots()
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.axis("off")  # Turn off the axes for better visualization
-        oval = patches.Ellipse((5, 5), width=8, height=10, fc='white', ec='black')
-        ax.add_patch(oval)
-        placeholder = st.empty()
-        ap_value_placeholder = st.empty()  # Placeholder for AP value display
+# Initialize result containers
+thresholds_placeholder = st.empty()
+health_stock_placeholder = st.empty()
+ap_value_placeholder = st.empty()
+placeholder = st.empty()
 
-        # Initialize result containers
-        thresholds_placeholder = st.empty()
-        health_stock_placeholder = st.empty()
+# Reset counters
+total_counts = 0
+weighted_sum = 0
+threshold_counts = {">0.6": 0, "0.5-0.6": 0, "0.3-0.4": 0, "<0.2": 0}
 
-        # Analyze AP thresholds and compute weighted sum dynamically
-        for ap in ap_scores:
-            # Update counters for thresholds
-            total_counts += 1  # Increment the total count
-            if ap > 0.6:
-                threshold_counts[">0.6"] += 1
-                weighted_sum += ap * 1.0  # Weight of 1.0
-            elif 0.5 <= ap <= 0.6:
-                threshold_counts["0.5-0.6"] += 1
-                weighted_sum += ap * 0.8  # Weight of 0.8
-            elif 0.3 <= ap <= 0.4:
-                threshold_counts["0.3-0.4"] += 1
-                weighted_sum += ap * 0.5  # Weight of 0.5
-            elif ap < 0.2:
-                threshold_counts["<0.2"] += 1
-                weighted_sum += ap * 0.2  # Weight of 0.2
+# Create a Matplotlib figure for the oval visualization
+fig, ax = plt.subplots()
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 10)
+ax.axis("off")
+oval = patches.Ellipse((5, 5), width=8, height=10, fc='white', ec='black')
+ax.add_patch(oval)
 
-            # Calculate health stock dynamically
-            if total_counts > 0:
-                weighted_average = weighted_sum / total_counts
-            else:
-                weighted_average = 0
-            health_stock = investment * weighted_average
+# Dynamic AP analysis loop
+for ap in ap_scores:
+    # Update threshold counters
+    total_counts += 1
+    if ap > 0.6:
+        threshold_counts[">0.6"] += 1
+        weighted_sum += ap * 1.0
+    elif 0.5 <= ap <= 0.6:
+        threshold_counts["0.5-0.6"] += 1
+        weighted_sum += ap * 0.8
+    elif 0.3 <= ap <= 0.4:
+        threshold_counts["0.3-0.4"] += 1
+        weighted_sum += ap * 0.5
+    elif ap < 0.2:
+        threshold_counts["<0.2"] += 1
+        weighted_sum += ap * 0.2
 
-            # Update oval color dynamically
-            color = get_color(ap)
-            oval.set_facecolor(color)
-            placeholder.pyplot(fig)
+    # Calculate health stock
+    weighted_average = weighted_sum / total_counts if total_counts > 0 else 0
+    health_stock = investment * weighted_average
 
-            # Display the current AP score above the graph
-            ap_value_placeholder.markdown(f"### Current AP Score: **{ap:.2f}**")
+    # Update oval color
+    oval.set_facecolor(get_color(ap))
+    placeholder.pyplot(fig)
 
-            # Update results dynamically
-            thresholds_placeholder.write("### AP Thresholds Crossed (Dynamic):")
-            thresholds_placeholder.write(f" - Greater than 0.6: {threshold_counts['>0.6']} times")
-            thresholds_placeholder.write(f" - Between 0.5 and 0.6: {threshold_counts['0.5-0.6']} times")
-            thresholds_placeholder.write(f" - Between 0.3 and 0.4: {threshold_counts['0.3-0.4']} times")
-            thresholds_placeholder.write(f" - Less than 0.2: {threshold_counts['<0.2']} times")
-            health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock:.2f}")
+    # Display current AP score
+    ap_value_placeholder.markdown(f"### Current AP Score: **{ap:.2f}**")
 
-            # Pause proportionally for smooth updates within 7 seconds
-            time.sleep(0.5)
+    # Update thresholds and health stock dynamically
+    thresholds_placeholder.write("### AP Thresholds Crossed (Dynamic):")
+    thresholds_placeholder.write(f" - Greater than 0.6: {threshold_counts['>0.6']} times")
+    thresholds_placeholder.write(f" - Between 0.5 and 0.6: {threshold_counts['0.5-0.6']} times")
+    thresholds_placeholder.write(f" - Between 0.3 and 0.4: {threshold_counts['0.3-0.4']} times")
+    thresholds_placeholder.write(f" - Less than 0.2: {threshold_counts['<0.2']} times")
+    health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock:.2f}")
+
+    # Sleep for calculated interval (smooth animation)
+    time.sleep(interval)
+
 
     except Exception as e:
         st.error(f"Error processing audio file: {e}")
