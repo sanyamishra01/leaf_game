@@ -70,7 +70,7 @@ if uploaded_file is not None:
         ap_scores = calculate_ap(audio_data, rate)
 
         # Subsample for speed
-        max_steps = 20
+        max_steps = 50
         if len(ap_scores) > max_steps:
             indices = np.linspace(0, len(ap_scores)-1, max_steps, dtype=int)
             ap_scores = ap_scores[indices]
@@ -114,10 +114,10 @@ if uploaded_file is not None:
             ap_value_placeholder.markdown(f"### Current AP Score: **{ap:.2f}**")
             thresholds_placeholder.write(
                 f"### AP Thresholds Crossed (Dynamic):\n"
-                f" - >0.6: {threshold_counts['>0.6']}\n"
-                f" - 0.5-0.6: {threshold_counts['0.5-0.6']}\n"
-                f" - 0.3-0.4: {threshold_counts['0.3-0.4']}\n"
-                f" - <0.2: {threshold_counts['<0.2']}"
+                f" - >0.6: {threshold_counts['>0.6']} times\n"
+                f" - 0.5-0.6: {threshold_counts['0.5-0.6']} times\n"
+                f" - 0.3-0.4: {threshold_counts['0.3-0.4']} times\n"
+                f" - <0.2: {threshold_counts['<0.2']} times"
             )
             health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock[i]:.2f}")
 
