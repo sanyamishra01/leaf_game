@@ -91,7 +91,7 @@ if uploaded_file is not None:
         ap_scores = calculate_ap(audio_data, rate)
 
         # Determine animation duration and update interval
-        ANIMATION_DURATION = 7.0  # Total duration for animation (in seconds)
+        ANIMATION_DURATION = 3.0  # Total duration for animation (in seconds)
         interval = ANIMATION_DURATION / len(ap_scores)  # Time interval per update
 
         # Create a Matplotlib figure for the oval visualization
