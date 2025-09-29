@@ -48,8 +48,8 @@ def convert_to_wav(uploaded_file):
         buffer.seek(0)
         return wave.open(buffer, "rb")
     except Exception as e:
-        st.error(f"Error processing audio file: {e}")
-        return None
+        # Just raise the exception, don't call st.error here
+        raise ValueError(f"Could not process audio file: {e}")
 
 # Streamlit UI
 st.title("Dynamic AP Analysis with Health Stock Calculation")
@@ -61,8 +61,10 @@ uploaded_file = st.file_uploader("Upload an audio file:", type=["wav", "mp3", "m
 if uploaded_file is not None:
     try:
         wav_file = convert_to_wav(uploaded_file)
-        if wav_file is None:
-            st.stop()
+    except ValueError as e:
+        st.error(str(e))
+        st.stop()
+
 
         rate = wav_file.getframerate()
         frames = wav_file.getnframes()
