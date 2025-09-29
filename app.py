@@ -78,9 +78,9 @@ if uploaded_file is not None:
         # Vectorized weight calculation
         ap_scores = np.array(ap_scores)
         weights = np.where(ap_scores > 0.6, 1.0,
-                  np.where((ap_scores >= 0.5) & (ap_scores <= 0.6), 0.8,
-                  np.where((ap_scores >= 0.3) & (ap_scores <= 0.4), 0.5,
-                  np.where(ap_scores < 0.2, 0.2, 0))))
+                  np.where((ap_scores > 0.5) & (ap_scores <= 0.6), 0.8,
+                  np.where((ap_scores >= 0.3) & (ap_scores <= 0.5), 0.5,
+                  np.where(ap_scores < 0.3, 0.2, 0))))
         weighted_avg = np.cumsum(ap_scores * weights) / np.arange(1, len(ap_scores)+1)
         health_stock = investment * weighted_avg
 
@@ -88,8 +88,8 @@ if uploaded_file is not None:
         threshold_counts = {
             ">0.6": np.sum(ap_scores > 0.6),
             "0.5-0.6": np.sum((ap_scores >= 0.5) & (ap_scores <= 0.6)),
-            "0.3-0.4": np.sum((ap_scores >= 0.3) & (ap_scores <= 0.4)),
-            "<0.2": np.sum(ap_scores < 0.2)
+            "0.3-0.5": np.sum((ap_scores >= 0.3) & (ap_scores <= 0.4)),
+            "<0.3": np.sum(ap_scores < 0.2)
         }
 
         # Initialize placeholders
@@ -116,8 +116,8 @@ if uploaded_file is not None:
                 f"### AP Thresholds Crossed (Dynamic):\n"
                 f" - >0.6: {threshold_counts['>0.6']} times\n"
                 f" - 0.5-0.6: {threshold_counts['0.5-0.6']} times\n"
-                f" - 0.3-0.4: {threshold_counts['0.3-0.4']} times\n"
-                f" - <0.2: {threshold_counts['<0.2']} times"
+                f" - 0.3-0.4: {threshold_counts['0.3-0.5']} times\n"
+                f" - <0.2: {threshold_counts['<0.3']} times"
             )
             health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock[i]:.2f}")
 
