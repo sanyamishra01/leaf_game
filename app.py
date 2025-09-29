@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import numpy as np
 from scipy.signal import stft
 import wave
@@ -30,14 +30,20 @@ def calculate_ap(audio_data, rate):
 
 # Function to get color based on AP
 def get_color(ap):
-    if ap < 0.2:
-        return '#b8e994'
-    elif 0.2 <= ap <= 0.4:
+    if ap < 0.1:
+        return '#ff9999'
+    elif 0.1 <= ap < 0.2:
+        return '#ff6666"
+    elif 0.2 <= ap < 0.3:
+        return '#cc0000"
+    elif 0.3 <= ap < 0.45:
+        return '#800000"
+    elif 0.45 <= ap < 0.5:
+        return '#b8e994"
+    elif 0.5 <= ap < 0.6:
         return '#55efc4'
-    elif 0.4 < ap < 0.6:
+    else 0.6 <= ap:
         return '#00b894'
-    else:
-        return '#006d5b'
 
 # Convert audio to WAV
 def convert_to_wav(uploaded_file):
@@ -79,19 +85,16 @@ if uploaded_file is not None:
 
         # Vectorized weight calculation
         ap_scores = np.array(ap_scores)
-        weights = np.where(ap_scores > 0.6, 1.0,
-                  np.where((ap_scores > 0.5) & (ap_scores <= 0.6), 0.8,
-                  np.where((ap_scores >= 0.3) & (ap_scores <= 0.5), 0.5,
-                  np.where(ap_scores < 0.3, 0.2, 0))))
-        weighted_avg = np.cumsum(ap_scores * weights) / np.arange(1, len(ap_scores)+1)
-        health_stock = investment * weighted_avg
+        weights = np.where(ap_scores >= 0.45, 1.0,
+                  np.where(ap_scores < 0.45, 0.5, 0))))
+        weighted_avg = np.cumsum(ap_scores * weights)
+        penalty = 0.5 * np.sum(ap_scores < 0.45)
+        health_stock = investment - penalty
 
         # Threshold counts
         threshold_counts = {
-            ">0.6": np.sum(ap_scores > 0.6),
-            "0.5-0.6": np.sum((ap_scores >= 0.5) & (ap_scores <= 0.6)),
-            "0.3-0.5": np.sum((ap_scores >= 0.3) & (ap_scores <= 0.5)),
-            "<0.3": np.sum(ap_scores < 0.3)
+            ">=0.45": np.sum(ap_scores >= 0.45),
+            "<0.45": np.sum(ap_scores < 0.45)
         }
 
         # Initialize placeholders
@@ -113,13 +116,11 @@ if uploaded_file is not None:
             oval.set_facecolor(get_color(ap))
             placeholder.pyplot(fig)
 
-            ap_value_placeholder.markdown(f"### Current AP Score: **{ap:.2f}**")
+            ap_value_placeholder.markdown(f"### Mean AP Score: **{ap:.2f}**")
             thresholds_placeholder.write(
                 f"### AP Thresholds Crossed (Dynamic):\n"
-                f" - >0.6: {threshold_counts['>0.6']} times\n"
-                f" - 0.5-0.6: {threshold_counts['0.5-0.6']} times\n"
-                f" - 0.3-0.5: {threshold_counts['0.3-0.5']} times\n"
-                f" - <0.3: {threshold_counts['<0.3']} times"
+                f" - >= 0.45: {threshold_counts['>=0.45']} times\n"
+                f" - < 0.45: {threshold_counts['<0.45']} times"
             )
             health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock[i]:.2f}")
 
