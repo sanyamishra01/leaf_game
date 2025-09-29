@@ -45,9 +45,9 @@ def calculate_ap(audio_data, rate):
 def get_color(ap):
     if ap < 0.2:
         return '#b8e994'  # Light green
-    elif 0.3 <= ap <= 0.4:
+    elif 0.2 <= ap <= 0.4:
         return '#55efc4'  # Normal green
-    elif 0.5 <= ap <= 0.6:
+    elif 0.4 < ap < 0.6:
         return '#00b894'  # Darker green
     else:
         return '#006d5b'  # Darkest green
@@ -149,7 +149,7 @@ if uploaded_file is not None:
             health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock:.2f}")
 
             # Pause proportionally for smooth updates within 7 seconds
-            time.sleep(interval)
+            time.sleep(0.5)
 
     except Exception as e:
         st.error(f"Error processing audio file: {e}")
