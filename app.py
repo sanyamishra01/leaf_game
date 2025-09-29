@@ -33,13 +33,13 @@ def get_color(ap):
     if ap < 0.1:
         return '#ff9999'
     elif 0.1 <= ap < 0.2:
-        return '#ff6666"
+        return '#ff6666'
     elif 0.2 <= ap < 0.3:
-        return '#cc0000"
+        return '#cc0000'
     elif 0.3 <= ap < 0.45:
-        return '#800000"
+        return '#800000'
     elif 0.45 <= ap < 0.5:
-        return '#b8e994"
+        return '#b8e994'
     elif 0.5 <= ap < 0.6:
         return '#55efc4'
     else 0.6 <= ap:
