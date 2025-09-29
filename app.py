@@ -54,7 +54,6 @@ def convert_to_wav(uploaded_file):
         buffer.seek(0)
         return wave.open(buffer, "rb")
     except Exception as e:
-        # Just raise the exception, don't call st.error here
         raise ValueError(f"Could not process audio file: {e}")
 
 # Streamlit UI
@@ -67,10 +66,6 @@ uploaded_file = st.file_uploader("Upload an audio file:", type=["wav", "mp3", "m
 if uploaded_file is not None:
     try:
         wav_file = convert_to_wav(uploaded_file)
-    except ValueError as e:
-        st.error(str(e))
-        st.stop()
-
 
         rate = wav_file.getframerate()
         frames = wav_file.getnframes()
@@ -86,8 +81,10 @@ if uploaded_file is not None:
         # Vectorized weight calculation
         ap_scores = np.array(ap_scores)
         weights = np.where(ap_scores >= 0.45, 1.0,
-                  np.where(ap_scores < 0.45, 0.5, 0)
+                  np.where(ap_scores < 0.45, 0.5, 0))
         weighted_avg = np.cumsum(ap_scores * weights)
+
+        # Penalty based on how many times AP < 0.45
         penalty = 0.5 * np.sum(ap_scores < 0.45)
         health_stock = investment - penalty
 
@@ -122,7 +119,7 @@ if uploaded_file is not None:
                 f" - >= 0.45: {threshold_counts['>=0.45']} times\n"
                 f" - < 0.45: {threshold_counts['<0.45']} times"
             )
-            health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock[i]:.2f}")
+            health_stock_placeholder.write(f"Health Stock Value (Dynamic): ₹{health_stock:.2f}")
 
         st.success("AP calculation completed!")
 
