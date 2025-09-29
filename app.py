@@ -86,7 +86,7 @@ if uploaded_file is not None:
         # Vectorized weight calculation
         ap_scores = np.array(ap_scores)
         weights = np.where(ap_scores >= 0.45, 1.0,
-                  np.where(ap_scores < 0.45, 0.5, 0))))
+                  np.where(ap_scores < 0.45, 0.5, 0)
         weighted_avg = np.cumsum(ap_scores * weights)
         penalty = 0.5 * np.sum(ap_scores < 0.45)
         health_stock = investment - penalty
