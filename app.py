@@ -42,7 +42,7 @@ def get_color(ap):
         return '#b8e994'
     elif 0.5 <= ap < 0.6:
         return '#55efc4'
-    else 0.6 <= ap:
+    else:
         return '#00b894'
 
 # Convert audio to WAV
