@@ -85,7 +85,7 @@ if uploaded_file is not None:
         weighted_avg = np.cumsum(ap_scores * weights)
 
         # Penalty based on how many times AP < 0.45
-        penalty = 0.5 * np.sum(ap_scores < 0.45)
+        penalty = investment * (0.5 / np.sum(ap_scores < 0.45))
         health_stock = investment - penalty
 
         # Threshold counts
